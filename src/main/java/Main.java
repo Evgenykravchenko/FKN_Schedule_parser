@@ -4,9 +4,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class Main {
     private static Connection connection;
@@ -15,6 +18,7 @@ public class Main {
     private static ArrayList<String> daysOfWeek = new ArrayList<>();
     private static ArrayList<Element> daySchedule = new ArrayList<>();
     private static ArrayList<Integer> rowsEveryDayNumber;
+
     static {
         daysOfWeek.add("ПН");
         daysOfWeek.add("ВТ");
@@ -24,19 +28,67 @@ public class Main {
         daysOfWeek.add("СБ");
     }
     
-    public static void main(String[] args) {
-        connection = setConnection("http://fkn.univer.omsk.su/academics/Schedule/schedule2_2.htm");
-        doc = createDocument(connection);
-        groups = setGroups(doc);
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        rowsEveryDayNumber = getRowsOnEveryDayList();
-        System.out.println(rowsEveryDayNumber);
-        System.out.println("========================================");
-        daySchedule = putCurrentDayScheduleInList(rowsEveryDayNumber, 4);
-        for (Element row: daySchedule) {
-            System.out.println(row);
+        System.out.print("Введите курс(1-5): ");
+        int courseValue = Integer.parseInt(reader.readLine());
+
+        connection = setConnection("http://fkn.univer.omsk.su/academics/Schedule/schedule" + courseValue + "_2.htm");
+        doc = createDocument(connection);
+        Parser tableParser = new TableParser(doc);
+        List<List<String>> table = tableParser.parseTable();
+
+        for (int i = 2; i < table.get(0).size(); i++) {
+            System.out.println(table.get(0).get(i).substring(table.get(0).get(i).length() - 12, table.get(0).get(i).length() - 5));
         }
+        System.out.println("Выберите группу из списка: ");
+        String group = reader.readLine().toUpperCase();
+
+        for (int i = 0; i < table.size(); i++) {
+            System.out.println(table.get(i).get(0)
+                    + " "
+                    + table.get(i).get(1)
+                    + " "
+                    + table.get(i).get(getIndexOfColumnWithGroup(table, group)));
+        }
+
+        /*System.out.print("Введите день недели: ");
+        String weekDay = reader.readLine();*/
+
+
+
+        /*for (int i = 0; i < table.size(); i++) {
+            if (table.get(i).contains(weekDay.toUpperCase()))
+                System.out.println(table.get(i));
+        }*/
+
     }
+
+    public static int getIndexOfColumnWithGroup(List<List<String>> table, String group) {
+        for (int i = 0; i < table.get(0).size(); i++) {
+            if (table.get(0).get(i).contains(group)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     //ОСТАВИТЬ
     public static Connection setConnection(String url) {
@@ -159,21 +211,4 @@ public class Main {
         }
         return daySchedule;
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
